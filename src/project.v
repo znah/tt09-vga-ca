@@ -47,18 +47,22 @@ module tt_um_vga_example(
   );
   
   parameter C = 64;
-  parameter W = 10;
+  parameter W = 5;
   reg [C-1:0] state [W];
+  reg left;
+  //wire center = state[0][0];
+  wire right = state[0][1];
   
   wire init_row = video_active & (pix_y==0);
-  wire init_val = pix_x==320;
+  wire init_val = (pix_x>>1)==160;
   wire serial = init_row ? init_val : (
-     (state[0][0] ^ state[0][1] )
+     (left ^ right)
   );
 
   integer i;
   always @(posedge clk) begin
-    if (video_active) begin
+    if (video_active & pix_x[0]) begin
+      left <= state[0][0];
       for (i=0; i<W-1; ++i) begin
         state[i] <= {state[i+1][0], state[i][C-1:1]};
       end
