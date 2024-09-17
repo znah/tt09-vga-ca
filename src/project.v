@@ -46,30 +46,30 @@ module tt_um_vga_example(
     .vpos(pix_y)
   );
   
-  parameter C = 64;
+  parameter C = 32;
   parameter W = 5;
   reg [C-1:0] state [W];
   reg left;
-  //wire center = state[0][0];
+  wire center = state[0][0];
   wire right = state[0][1];
   
-  wire init_row = video_active & (pix_y==0);
-  wire init_val = (pix_x>>1)==160;
+  wire init_row = video_active & pix_y==0;
+  wire init_val = (pix_x>>2)==80;
+  wire copy_row = pix_y[1:0]!=0;
   wire serial = init_row ? init_val : (
-     (left ^ right)
+      copy_row ? center : (left ^ (center | right))
   );
 
   integer i;
   always @(posedge clk) begin
-    if (video_active & pix_x[0]) begin
-      left <= state[0][0];
+    if (video_active & pix_x[1:0]==0) begin
+      left <= state[0][0] & ~init_row;
       for (i=0; i<W-1; ++i) begin
         state[i] <= {state[i+1][0], state[i][C-1:1]};
       end
       state[W-1] <= {serial, state[W-1][C-1:1]};
     end
   end
-
   
   wire [1:0] a = {serial,serial};
 
