@@ -36,8 +36,6 @@ module tt_um_vga_example(
   // Suppress unused signals warning
   wire _unused_ok = &{ena, ui_in, uio_in};
 
-  reg [9:0] counter;
-
   hvsync_generator hvsync_gen(
     .clk(clk),
     .reset(~rst_n),
@@ -48,24 +46,31 @@ module tt_um_vga_example(
     .vpos(pix_y)
   );
   
-  //wire [9:0] moving_x = pix_x + counter;
+  parameter C = 64;
+  parameter W = 10;
+  reg [C-1:0] state [W];
+  
+  wire init_row = video_active & (pix_y==0);
+  wire init_val = pix_x==320;
+  wire serial = init_row ? init_val : (
+     (state[0][0] ^ state[0][1] )
+  );
 
-  wire [9:0] y = pix_y+counter;
-  wire [9:0] x = pix_x+counter;
-  wire a = ((pix_x[9:2]^y[9:2])) % 9 == 0;
-  wire b = ((x[9:2]^pix_y[9:2])) % 11 == 0;
-  wire c = ((x[9:2]^y[9:2])) % 17 == 0;
-
-  assign R = video_active ? {a,b} : 2'b00;
-  assign G = video_active ? {b,c} : 2'b00;
-  assign B = video_active ? {c,a} : 2'b00;
-
-  always @(posedge vsync) begin
-    if (~rst_n) begin
-      counter <= 0;
-    end else begin
-      counter <= counter + 1;
+  integer i;
+  always @(posedge clk) begin
+    if (video_active) begin
+      for (i=0; i<W-1; ++i) begin
+        state[i] <= {state[i+1][0], state[i][C-1:1]};
+      end
+      state[W-1] <= {serial, state[W-1][C-1:1]};
     end
   end
+
+  
+  wire [1:0] a = {serial,serial};
+
+  assign R = video_active ? a : 2'b00;
+  assign G = video_active ? a : 2'b00;
+  assign B = video_active ? a : 2'b00;
   
 endmodule
