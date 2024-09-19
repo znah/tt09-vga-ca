@@ -48,7 +48,7 @@ module tt_um_vga_example(
   
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
-  parameter GRID_W = 110;
+  parameter GRID_W = 100;
   parameter logCELL_SIZE = 2;
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
@@ -103,8 +103,8 @@ module tt_um_vga_example(
   end
 
   wire c = cells[0]&in_grid;
-  wire [1:0] a = {c,c};
-  assign R = a;
-  assign G = a;
-  assign B = a;
+  wire [5:0] color = c?(rule_sel?6'b001011:6'b101100):6'b000000;
+  assign R = color[5:4];
+  assign G = color[3:2];
+  assign B = color[1:0];
 endmodule
