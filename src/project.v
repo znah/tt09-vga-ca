@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Uri Shaked
+ * Copyright (c) 2024 Alexander Mordvintsev
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -55,7 +55,7 @@ module tt_um_vga_example(
 
   wire [9:0] x = pix_x-PAD_LEFT;
   wire [7:0] cell_x = x[9:logCELL_SIZE];
-  wire step = cell_x[0];
+  wire step = x[logCELL_SIZE-1];
 
   reg [GRID_W-1:0] cells;
   reg [GRID_W-1:0] next_cells;
@@ -79,7 +79,7 @@ module tt_um_vga_example(
     init <= !rst_n;
   end
 
-  always @(edge step) begin
+  always @(negedge step) begin
     if (in_grid) begin
       left <= cells[GRID_W-1];
       cells[GRID_W-1:1] <= cells[GRID_W-2:0];
