@@ -46,35 +46,65 @@ module tt_um_vga_example(
     .vpos(pix_y)
   );
   
-  parameter C = 32;
-  parameter W = 5;
-  reg [C-1:0] state [W];
-  reg left;
-  wire center = state[0][0];
-  wire right = state[0][1];
-  
-  wire init_row = video_active & pix_y==0;
-  wire init_val = (pix_x>>2)==80;
-  wire copy_row = pix_y[1:0]!=0;
-  wire serial = init_row ? init_val : (
-      copy_row ? center : (left ^ (center | right))
-  );
+  parameter WIDTH = 640;
+  parameter HEIGHT = 480;
+  parameter GRID_W = 100;
+  parameter logCELL_SIZE = 2;
+  parameter CELL_SIZE = 1<<logCELL_SIZE;
+  parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
 
-  integer i;
-  always @(posedge clk) begin
-    if (video_active & pix_x[1:0]==0) begin
-      left <= state[0][0] & ~init_row;
-      for (i=0; i<W-1; ++i) begin
-        state[i] <= {state[i+1][0], state[i][C-1:1]};
+  wire [9:0] x = pix_x-PAD_LEFT;
+  wire [7:0] cell_x = x[9:logCELL_SIZE];
+  wire step = cell_x[0];
+
+  reg [GRID_W-1:0] cells;
+  reg [GRID_W-1:0] next_cells;
+  reg left;
+  wire center = cells[GRID_W-1];
+  wire right = cells[GRID_W-2];
+
+  parameter RULE_BIT = 11;
+
+  reg [RULE_BIT:0] row_count;
+  wire in_grid = cell_x < GRID_W && video_active;
+  wire copy_row = (pix_y&(CELL_SIZE-1)) != 0;
+  wire rule30 = left ^ (center | right);  // 30
+  wire rule110 = ((left|center) ^ (left&center&right)); // 110
+  wire rule_sel = row_count[RULE_BIT];
+  wire rule_cell = rule_sel ? rule110 : rule30;
+  wire new_cell = copy_row ? center : rule_cell;
+
+  reg init;
+  always @(negedge rst_n or vsync) begin
+    init <= !rst_n;
+  end
+
+  always @(edge step) begin
+    if (in_grid) begin
+      left <= cells[GRID_W-1];
+      cells[GRID_W-1:1] <= cells[GRID_W-2:0];
+      if (pix_y == 0) begin
+        if (init) begin
+          cells[0] <= cell_x == GRID_W/2; // seed
+         end else begin
+          cells[0] <= next_cells[GRID_W-1];
+          next_cells <= {next_cells[GRID_W-2:0], next_cells[GRID_W-1]};
+         end
+      end else begin
+        cells[0] <= new_cell;
       end
-      state[W-1] <= {serial, state[W-1][C-1:1]};
+      if (pix_y == CELL_SIZE) begin
+        next_cells <= {next_cells[GRID_W-2:0], new_cell};
+      end
+    end
+    if (cell_x == 0 && video_active) begin
+      row_count <= row_count+1+(pix_y==HEIGHT-1 ? CELL_SIZE-HEIGHT : 0);
     end
   end
-  
-  wire [1:0] a = {serial,serial};
 
-  assign R = video_active ? a : 2'b00;
-  assign G = video_active ? a : 2'b00;
-  assign B = video_active ? a : 2'b00;
-  
+  wire c = cells[0]&in_grid;
+  wire [1:0] a = {c,c};
+  assign R = a;
+  assign G = a;
+  assign B = a;
 endmodule
