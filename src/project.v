@@ -52,18 +52,26 @@ module tt_um_vga_example(
   parameter logCELL_SIZE = 2;
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
-
+  
   wire [9:0] x = pix_x-PAD_LEFT;
   wire [7:0] cell_x = x[9:logCELL_SIZE];
   wire step = x[logCELL_SIZE-1];
 
-  reg [GRID_W-1:0] cells;
-  reg [GRID_W-1:0] next_cells;
+  // `define SHIFT(data) data[LAST:1] <= data[LAST-1:0];
+  // reg [LAST:0] cells;
+  // reg [LAST:0] next_cells;
+  parameter L = GRID_W/2-1;
+  `define REG(name) reg [L:0] name [2];
+  `define SHIFT(data) data[1] <= {data[1][L-1:0], data[0][L]}; data[0][L:1] <= data[0][L-1:0];
+  `define HEAD(data) data[0][0]
+  `define TAIL(data,i) data[1][L-(i)]
+  `REG(cells);
+  `REG(next_cells);
   reg left;
-  wire center = cells[GRID_W-1];
-  wire right = cells[GRID_W-2];
+  wire center = `TAIL(cells, 0);
+  wire right = `TAIL(cells, 1);
 
-  parameter RULE_BIT = 11;
+  parameter RULE_BIT = 10;
 
   reg [RULE_BIT:0] row_count;
   wire in_grid = cell_x < GRID_W && video_active;
@@ -71,7 +79,9 @@ module tt_um_vga_example(
   wire rule30 = left ^ (center | right);  // 30
   wire rule110 = ((left|center) ^ (left&center&right)); // 110
   wire rule_sel = row_count[RULE_BIT];
-  wire rule_cell = rule_sel ? rule110 : rule30;
+  //wire rule_cell = rule_sel ? rule110 : rule30;
+  wire [7:0] rule = 30;//110;
+  wire rule_cell = rule[{left,center,right}];//rule_sel ? rule110 : rule30;
   wire new_cell = copy_row ? center : rule_cell;
 
   reg init = 1;
@@ -80,20 +90,21 @@ module tt_um_vga_example(
       init <= 1;
     end
     if (in_grid) begin
-      left <= cells[GRID_W-1];
-      cells[GRID_W-1:1] <= cells[GRID_W-2:0];
+      left <= `TAIL(cells, 0);
+      `SHIFT(cells);
       if (pix_y == 0) begin
         if (init) begin
-          cells[0] <= cell_x == GRID_W/2; // seed
+          `HEAD(cells) <= cell_x == GRID_W/2; // seed
          end else begin
-          cells[0] <= next_cells[GRID_W-1];
-          next_cells <= {next_cells[GRID_W-2:0], next_cells[GRID_W-1]};
+          `HEAD(cells) <= `TAIL(next_cells, 0);
+          `SHIFT(next_cells);
          end
       end else begin
-        cells[0] <= new_cell;
+        `HEAD(cells) <= new_cell;
       end
       if (pix_y == CELL_SIZE) begin
-        next_cells <= {next_cells[GRID_W-2:0], new_cell};
+        `SHIFT(next_cells);
+        `HEAD(next_cells) <= new_cell;
         init <= 0;
       end
     end
@@ -102,7 +113,7 @@ module tt_um_vga_example(
     end
   end
 
-  wire c = cells[0]&in_grid;
+  wire c = `HEAD(cells)&in_grid;
   wire [5:0] color = c?(rule_sel?6'b001011:6'b101100):6'b000000;
   assign R = color[5:4];
   assign G = color[3:2];
