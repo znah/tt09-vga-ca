@@ -48,7 +48,7 @@ module tt_um_vga_example(
   
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
-  parameter GRID_W = 120;
+  parameter GRID_W = 110;
   parameter logCELL_SIZE = 2;
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
