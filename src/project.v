@@ -74,12 +74,11 @@ module tt_um_vga_example(
   wire rule_cell = rule_sel ? rule110 : rule30;
   wire new_cell = copy_row ? center : rule_cell;
 
-  reg init;
-  always @(negedge rst_n or vsync) begin
-    init <= !rst_n;
-  end
-
+  reg init = 1;
   always @(negedge step) begin
+    if (!rst_n) begin
+      init <= 1;
+    end
     if (in_grid) begin
       left <= cells[GRID_W-1];
       cells[GRID_W-1:1] <= cells[GRID_W-2:0];
@@ -95,9 +94,10 @@ module tt_um_vga_example(
       end
       if (pix_y == CELL_SIZE) begin
         next_cells <= {next_cells[GRID_W-2:0], new_cell};
+        init <= 0;
       end
     end
-    if (cell_x == 0 && video_active) begin
+    if (cell_x == 0 && video_active) begin // rule switching
       row_count <= row_count+1+(pix_y==HEIGHT-1 ? CELL_SIZE-HEIGHT : 0);
     end
   end
