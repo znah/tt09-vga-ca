@@ -57,9 +57,6 @@ module tt_um_vga_example(
   wire [7:0] cell_x = x[9:logCELL_SIZE];
   wire step = x[logCELL_SIZE-1];
 
-  // `define SHIFT(data) data[LAST:1] <= data[LAST-1:0];
-  // reg [LAST:0] cells;
-  // reg [LAST:0] next_cells;
   parameter L = GRID_W/2-1;
   `define REG(name) reg [L:0] name [2];
   `define SHIFT(data) data[1] <= {data[1][L-1:0], data[0][L]}; data[0][L:1] <= data[0][L-1:0];
@@ -71,19 +68,18 @@ module tt_um_vga_example(
   wire center = `TAIL(cells, 0);
   wire right = `TAIL(cells, 1);
 
-  parameter RULE_BIT = 10;
-
-  reg [RULE_BIT:0] row_count;
-  wire in_grid = cell_x < GRID_W && video_active;
-  wire copy_row = (pix_y&(CELL_SIZE-1)) != 0;
-  wire rule30 = left ^ (center | right);  // 30
-  wire rule110 = ((left|center) ^ (left&center&right)); // 110
-  wire rule_sel = row_count[RULE_BIT];
-  //wire rule_cell = rule_sel ? rule110 : rule30;
-  wire [7:0] rule = 30;//110;
-  wire rule_cell = rule[{left,center,right}];//rule_sel ? rule110 : rule30;
+  parameter [5:0] rule_colors [16] = '{6'b001011, 6'b101100, 6'b101001, 6'b001110,  6'b101010, 6'b101110, 6'b110001, 6'b100110, 
+                                      6'b101010, 6'b101110, 6'b110001, 6'b100110,  6'b101010, 6'b101110, 6'b110001, 6'b100110};
+  parameter [7:0] rules[16] = '{30, 18, 161, 150, 22, 110, 54, 122,     118, 57, 18, 165, 90, 180, 60, 146};
+  reg [10:0] row_count;
+  wire [3:0] rule_idx = row_count[10:7];
+  wire [7:0] rule = rules[rule_idx];
+  wire rule_cell = rule[{left,center,right}];
+  
+  wire copy_row = (pix_y&(CELL_SIZE-1)) != 0;  
   wire new_cell = copy_row ? center : rule_cell;
 
+  wire in_grid = cell_x < GRID_W && video_active;
   reg init = 1;
   always @(negedge step) begin
     if (!rst_n) begin
@@ -108,13 +104,13 @@ module tt_um_vga_example(
         init <= 0;
       end
     end
-    if (cell_x == 0 && video_active) begin // rule switching
-      row_count <= row_count+1+(pix_y==HEIGHT-1 ? CELL_SIZE-HEIGHT : 0);
+    if (cell_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
+      row_count <= row_count+(pix_y==HEIGHT ? 1-HEIGHT/CELL_SIZE : 1);
     end
   end
 
   wire c = `HEAD(cells)&in_grid;
-  wire [5:0] color = c?(rule_sel?6'b001011:6'b101100):6'b000000;
+  wire [5:0] color = c ? rule_colors[rule_idx] : 6'b000000;
   assign R = color[5:4];
   assign G = color[3:2];
   assign B = color[1:0];
