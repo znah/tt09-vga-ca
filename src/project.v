@@ -68,20 +68,11 @@ module tt_um_vga_example(
   wire center = `TAIL(cells, 0);
   wire right = `TAIL(cells, 1);
 
-  // parameter [5:0] rule_colors [16] = '{6'b001011, 6'b101100, 6'b101001, 6'b001110,  6'b101010, 6'b101110, 6'b110001, 6'b100110, 
-  //                                     6'b101010, 6'b101110, 6'b110001, 6'b100110,  6'b101010, 6'b101110, 6'b110001, 6'b100110};
-  // parameter [7:0] rules[16] = '{30, 18, 161, 150, 22, 110, 54, 122,     118, 57, 18, 165, 90, 180, 60, 146};
-  wire [5:0] rule_colors[2];
-  wire [7:0] rules[2];
-  assign rule_colors[0] = 6'b001011;
-  assign rule_colors[1] = 6'b101100;
-  assign rules[0] = 30;
-  assign rules[1] = 110;
-
   reg [10:0] row_count;
-  wire rule_idx = row_count[5];
-  wire [7:0] rule = rules[rule_idx];
-  wire [5:0] rule_color = rule_colors[rule_idx];
+  wire [2:0] i = row_count[10:8];
+  wire [7:0] rule = i==0 ? 30 :      i==1 ? 110 :     i==2 ? 22 :    i==3 ? 60 :
+                    i==4 ? 118 :     i==5 ? 161 :     i==6 ? 90 :    146  ;
+  wire [5:0] rule_color = {i[0], 1'b1, 1'b1, i[1], i[2], 1'b1};
   
   wire rule_cell = rule[{left,center,right}];
   wire copy_row = (pix_y&(CELL_SIZE-1)) != 0;  
