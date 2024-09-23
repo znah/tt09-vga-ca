@@ -86,7 +86,7 @@ module tt_um_vga_example(
   wire [5:0] rule_color = rule[6:1];
   
   wire rule_cell = rule[{left,center,right}];
-  wire copy_row = (pix_y&(CELL_SIZE-1)) != 0;  
+  wire copy_row = |pix_y[logCELL_SIZE-1:0];
   wire new_cell = copy_row ? center : rule_cell;
 
   wire in_grid = cell_x < GRID_W && video_active;
