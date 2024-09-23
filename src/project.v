@@ -70,10 +70,20 @@ module tt_um_vga_example(
 
   reg [10:0] row_count;
   wire [2:0] i = row_count[10:8];
-  wire [7:0] rule = i==0 ? 30 :  110; 
-  // i==1 ? 110 :     i==2 ? 22 :    i==3 ? 60 :
-  //                    i==4 ? 118 :     i==5 ? 161 :     i==6 ? 90 :    146  ;
-  wire [5:0] rule_color = {i[0], 1'b1, 1'b1, i[1], i[2], 1'b1};
+  reg [7:0] rules [0:7];
+  initial begin
+        rules[0] = 30;
+        rules[1] = 110;
+        rules[2] = 22;
+        rules[3] = 73;
+        rules[4] = 90;
+        rules[5] = 146;
+        rules[6] = 105;
+        rules[7] = 102;
+  end  
+
+  wire [7:0] rule = rules[i];
+  wire [5:0] rule_color = rule[6:1];
   
   wire rule_cell = rule[{left,center,right}];
   wire copy_row = (pix_y&(CELL_SIZE-1)) != 0;  
