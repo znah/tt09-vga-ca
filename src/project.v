@@ -48,7 +48,7 @@ module tt_um_vga_example(
   
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
-  parameter GRID_W = 120;
+  parameter GRID_W = 150;
   parameter logCELL_SIZE = 2;
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
@@ -57,11 +57,13 @@ module tt_um_vga_example(
   wire [7:0] cell_x = x[9:logCELL_SIZE];
   wire step = x[logCELL_SIZE-1];
 
-  parameter L = GRID_W/2-1;
-  `define REG(name) reg [L:0] name [2];
-  `define SHIFT(data) data[1] <= {data[1][L-1:0], data[0][L]}; data[0][L:1] <= data[0][L-1:0];
+  parameter L = GRID_W/3-1;
+  `define REG(name) reg [L:0] name [3];
+  `define SHIFT(data) data[2] <= {data[2][L-1:0], data[1][L]}; \
+                      data[1] <= {data[1][L-1:0], data[0][L]}; \
+                      data[0][L:1] <= data[0][L-1:0];
   `define HEAD(data) data[0][0]
-  `define TAIL(data,i) data[1][L-(i)]
+  `define TAIL(data,i) data[2][L-(i)]
   `REG(cells);
   `REG(next_cells);
   reg left;
