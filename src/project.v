@@ -70,8 +70,9 @@ module tt_um_vga_example(
 
   reg [10:0] row_count;
   wire [2:0] i = row_count[10:8];
-  wire [7:0] rule = i==0 ? 30 :      i==1 ? 110 :     i==2 ? 22 :    i==3 ? 60 :
-                    i==4 ? 118 :     i==5 ? 161 :     i==6 ? 90 :    146  ;
+  wire [7:0] rule = i==0 ? 30 :  110; 
+  // i==1 ? 110 :     i==2 ? 22 :    i==3 ? 60 :
+  //                    i==4 ? 118 :     i==5 ? 161 :     i==6 ? 90 :    146  ;
   wire [5:0] rule_color = {i[0], 1'b1, 1'b1, i[1], i[2], 1'b1};
   
   wire rule_cell = rule[{left,center,right}];
