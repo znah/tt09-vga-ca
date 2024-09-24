@@ -5,7 +5,7 @@
 
 `default_nettype none
 
-module tt_um_vga_example(
+module tt_um_vga_ca(
   input  wire [7:0] ui_in,    // Dedicated inputs
   output wire [7:0] uo_out,   // Dedicated outputs
   input  wire [7:0] uio_in,   // IOs: Input path
@@ -46,11 +46,11 @@ module tt_um_vga_example(
     .vpos(pix_y)
   );
   
+  parameter logCELL_SIZE = 2;
+  parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
   parameter GRID_W = 160;
-  parameter logCELL_SIZE = 2;
-  parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
   
   wire [9:0] x = pix_x-PAD_LEFT;
