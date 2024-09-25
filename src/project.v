@@ -50,7 +50,7 @@ module tt_um_znah_vga_ca(
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
-  parameter GRID_W = 160;
+  parameter GRID_W = 100;
   parameter PAD_LEFT = (WIDTH-GRID_W*CELL_SIZE)/2;
   
   wire [9:0] x = pix_x-PAD_LEFT;
