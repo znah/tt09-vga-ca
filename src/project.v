@@ -55,8 +55,8 @@ module tt_um_znah_vga_ca(
   
   wire [9:0] x = pix_x-PAD_LEFT;
   wire [7:0] cell_x = x[9:logCELL_SIZE];
-  wire [logCELL_SIZE-1:0] fract_x = x[logCELL_SIZE-1:0];
-  
+  wire step = x[logCELL_SIZE-1];
+
   parameter L = GRID_W/4-1;
   `define REG(name) reg [L:0] name [4]
   `define SHIFT(data) data[3] <= {data[3][L-1:0], data[2][L]}; \
@@ -94,11 +94,11 @@ module tt_um_znah_vga_ca(
 
   wire in_grid = cell_x < GRID_W && video_active;
   reg init = 1;
-  always @(posedge clk) begin
+  always @(negedge step) begin
     if (!rst_n) begin
       init <= 1;
     end
-    if (in_grid && fract_x==0) begin
+    if (in_grid) begin
       left <= `TAIL(cells, 0);
       `SHIFT(cells);
       if (pix_y == 0) begin
@@ -117,7 +117,7 @@ module tt_um_znah_vga_ca(
         init <= 0;
       end
     end
-    if (pix_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
+    if (cell_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
       row_count <= row_count+(pix_y==HEIGHT ? 1-HEIGHT/CELL_SIZE : 1);
     end
   end
