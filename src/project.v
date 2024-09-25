@@ -58,7 +58,7 @@ module tt_um_vga_ca(
   wire step = x[logCELL_SIZE-1];
 
   parameter L = GRID_W/4-1;
-  `define REG(name) reg [L:0] name [4];
+  `define REG(name) reg [L:0] name [0:3];
   `define SHIFT(data) data[3] <= {data[3][L-1:0], data[2][L]}; \
                       data[2] <= {data[2][L-1:0], data[1][L]}; \
                       data[1] <= {data[1][L-1:0], data[0][L]}; \
