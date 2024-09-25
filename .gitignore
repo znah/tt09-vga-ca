@@ -2,6 +2,9 @@
 .idea
 *.vcd
 runs
+tt/
+~/ttsetup
+obj_dir/
 tt_submission
 src/user_config.json
 src/config_merged.json
