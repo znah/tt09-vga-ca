@@ -128,7 +128,7 @@ module tt_um_znah_vga_ca(
   parameter L = 31;
   reg [L:0] data;
   wire [L:0] data_buf;
-  sky130_fd_sc_hd__dlygate4sd3_1 _buf ( .X(data_buf), .A(data) );
+  sky130_fd_sc_hd__dlygate4sd3_1 _buf[L:0] ( .X(data_buf), .A(data) );
 
   always @(posedge clk) begin
     data <= {ui_in[0], data_buf[L:1]};
