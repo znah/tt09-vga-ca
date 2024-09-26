@@ -46,7 +46,7 @@ module tt_um_znah_vga_ca(
     .vpos(pix_y)
   );
   
-  parameter logCELL_SIZE = 2;
+  /*parameter logCELL_SIZE = 2;
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
@@ -123,7 +123,18 @@ module tt_um_znah_vga_ca(
   end
 
   wire c = `HEAD(cells)&in_grid;
-  wire [5:0] color = c ? rule_color : 6'b000000;
+  wire [5:0] color = c ? rule_color : 6'b000000;*/
+
+  parameter L = 31;
+  reg [L:0] data;
+  wire [L:0] data_buf;
+  sky130_fd_sc_hd__dlygate4sd3_1 _buf ( .X(data_buf), .A(data) );
+
+  always @(posedge clk) begin
+    data <= {ui_in[0], data_buf[L:1]};
+  end
+
+  wire [5:0] color = data_buf[5:0];
   assign R = color[5:4];
   assign G = color[3:2];
   assign B = color[1:0];
