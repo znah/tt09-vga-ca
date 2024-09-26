@@ -125,13 +125,15 @@ module tt_um_znah_vga_ca(
   wire c = `HEAD(cells)&in_grid;
   wire [5:0] color = c ? rule_color : 6'b000000;*/
 
-  parameter L = 31;
+  parameter L = 320-1;
   reg [L:0] data;
   wire [L:0] data_buf;
   sky130_fd_sc_hd__dlygate4sd3_1 _buf[L:0] ( .X(data_buf), .A(data) );
 
   always @(posedge clk) begin
-    data <= {ui_in[0], data_buf[L:1]};
+    if ui_in[1] begin
+      data <= {ui_in[0], data_buf[L:1]};
+    end
   end
 
   wire [5:0] color = data_buf[5:0];
