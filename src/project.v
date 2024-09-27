@@ -109,6 +109,7 @@ module tt_um_znah_vga_ca(
   always @(posedge clk) begin
     if (!rst_n) begin
       init <= 1;
+      row_count <= 0;
     end
     if (in_grid && fract_x==0) begin
       left <= `TAIL(cells, 0);
