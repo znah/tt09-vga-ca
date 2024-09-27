@@ -66,10 +66,13 @@ module tt_um_znah_vga_ca(
   // `define HEAD(data) data[0][0]
   // `define TAIL(data,i) data[3][L-(i)]
   parameter L = GRID_W-1;
-  `define REG(name) (* mem2reg *) shift_reg #(.N(GRID_W)) name
-  `define SHIFT(data) data.r[L:1] <= data.b[L-1:0];
-  `define HEAD(data) data.r[0]
-  `define TAIL(data,i) data.b[L-(i)]
+  `define REG(name) (* mem2reg *) reg[L:0] name; \
+      wire[L:0] name``_buf; \
+       sky130_fd_sc_hd__dlygate4sd3_1 name``buf_[L:0] ( .X(name``_buf), .A(name) );
+
+  `define SHIFT(data) data[L:1] <= data``_buf[L-1:0];
+  `define HEAD(data) data[0]
+  `define TAIL(data,i) data``_buf[L-(i)]
   `REG(cells);
   `REG(next_cells);
   reg left;
@@ -133,17 +136,4 @@ module tt_um_znah_vga_ca(
   assign R = color[5:4];
   assign G = color[3:2];
   assign B = color[1:0];
-endmodule
-
-
-module shift_reg #(parameter N=8) ();
-  parameter L=N-1;
-  (* mem2reg *) reg [L:0] r;
-  wire [L:0] b;
-  
-  `ifdef SIM
-    sky130_fd_sc_hd__dlygate4sd3_1 _buf[L:0] ( .X(b), .A(r) );
-  `else
-    buf[L:0] (b,r);
-  `endif
 endmodule
