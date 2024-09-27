@@ -66,13 +66,17 @@ module tt_um_znah_vga_ca(
   // `define HEAD(data) data[0][0]
   // `define TAIL(data,i) data[3][L-(i)]
   parameter L = GRID_W-1;
-  `define REG(name) (* mem2reg *) reg[L:0] name; \
-      wire[L:0] name``_buf; \
-       sky130_fd_sc_hd__dlygate4sd3_1 name``buf_[L:0] ( .X(name``_buf), .A(name) );
+  `ifdef SIM
+    `define BUF(name) assign name``_buf = name
+  `else
+    `define BUF(name) sky130_fd_sc_hd__dlygate4sd3_1 name``buf_[L:0] ( .X(name``_buf), .A(name) )
+  `endif
+  `define REG(name) (* mem2reg *) reg[L:0] name; wire[L:0] name``_buf ; `BUF(name)
 
-  `define SHIFT(data) data[L:1] <= data``_buf[L-1:0];
+  `define SHIFT(data) data[L:1] <= data``_buf[L-1:0]
   `define HEAD(data) data[0]
   `define TAIL(data,i) data``_buf[L-(i)]
+
   `REG(cells);
   `REG(next_cells);
   reg left;
