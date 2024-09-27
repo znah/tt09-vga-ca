@@ -46,7 +46,7 @@ module tt_um_znah_vga_ca(
     .vpos(pix_y)
   );
   
-  /*parameter logCELL_SIZE = 2;
+  parameter logCELL_SIZE = 2;
   parameter CELL_SIZE = 1<<logCELL_SIZE;
   parameter WIDTH = 640;
   parameter HEIGHT = 480;
@@ -57,14 +57,19 @@ module tt_um_znah_vga_ca(
   wire [7:0] cell_x = x[9:logCELL_SIZE];
   wire [logCELL_SIZE-1:0] fract_x = x[logCELL_SIZE-1:0];
   
-  parameter L = GRID_W/4-1;
-  `define REG(name) (* mem2reg *) reg [L:0] name [4]
-  `define SHIFT(data) data[3] <= {data[3][L-1:0], data[2][L]}; \
-                      data[2] <= {data[2][L-1:0], data[1][L]}; \
-                      data[1] <= {data[1][L-1:0], data[0][L]}; \
-                      data[0][L:1] <= data[0][L-1:0];
-  `define HEAD(data) data[0][0]
-  `define TAIL(data,i) data[3][L-(i)]
+  // parameter L = GRID_W/4-1;
+  // `define REG(name) (* mem2reg *) reg [L:0] name [4]
+  // `define SHIFT(data) data[3] <= {data[3][L-1:0], data[2][L]}; \
+  //                     data[2] <= {data[2][L-1:0], data[1][L]}; \
+  //                     data[1] <= {data[1][L-1:0], data[0][L]}; \
+  //                     data[0][L:1] <= data[0][L-1:0];
+  // `define HEAD(data) data[0][0]
+  // `define TAIL(data,i) data[3][L-(i)]
+  parameter L = GRID_W-1;
+  `define REG(name) (* mem2reg *) shift_reg #(.N(GRID_W)) name;
+  `define SHIFT(data) data.r[L:1] <= data.b[L-1:0];
+  `define HEAD(data) data.r[0]
+  `define TAIL(data,i) data.b[L-(i)]
   `REG(cells);
   `REG(next_cells);
   reg left;
@@ -123,21 +128,22 @@ module tt_um_znah_vga_ca(
   end
 
   wire c = `HEAD(cells)&in_grid;
-  wire [5:0] color = c ? rule_color : 6'b000000;*/
+  wire [5:0] color = c ? rule_color : 6'b000000;
 
-  parameter L = 320-1;
-  reg [L:0] data;
-  wire [L:0] data_buf;
-  sky130_fd_sc_hd__dlygate4sd3_1 _buf[L:0] ( .X(data_buf), .A(data) );
-
-  always @(posedge clk) begin
-    if (ui_in[1]) begin
-      data <= {ui_in[0], data_buf[L:1]};
-    end
-  end
-
-  wire [5:0] color = data_buf[5:0];
   assign R = color[5:4];
   assign G = color[3:2];
   assign B = color[1:0];
+endmodule
+
+
+module shift_reg #(parameter N=8) ();
+  parameter L=N-1;
+  (* mem2reg *) reg [L:0] r;
+  wire [L:0] b;
+  
+  `ifdef SIM
+    sky130_fd_sc_hd__dlygate4sd3_1 _buf[L:0] ( .X(b), .A(r) );
+  `else
+    buf[L:0] (b,r);
+  `endif
 endmodule
