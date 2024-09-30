@@ -100,26 +100,29 @@ module tt_um_znah_vga_ca(
   wire [7:0] rule = rules[i];
   wire [5:0] rule_color = rule[6:1];
   
+  wire seed_cell = cell_x == GRID_W/2;
   wire rule_cell = rule[{left,center,right}];
-  wire copy_row = |pix_y[logCELL_SIZE-1:0];
-  wire new_cell = copy_row ? center : rule_cell;
+  wire [logCELL_SIZE-1:0] cell_row = pix_y[logCELL_SIZE-1:0];
+  wire new_cell = cell_row==0 ? rule_cell : center;
 
   wire in_grid = cell_x < GRID_W && video_active;
-  reg init = 1;
+  wire row_end = pix_x == WIDTH;
+  wire reset = ~rst_n;
   always @(posedge clk) begin
-    if (~rst_n) begin
-      init <= 1;
+    if (reset) begin
       row_count <= 0;
-    end else if (pix_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
-      row_count <= row_count+(pix_y==HEIGHT ? 1-HEIGHT/CELL_SIZE : 1);
+    end else if (row_end && pix_y<HEIGHT && &cell_row) begin
+      row_count <= row_count+1;
+    end else if (row_end && pix_y==HEIGHT) begin
+      row_count <= row_count-HEIGHT/CELL_SIZE+1;
     end
 
-    if (rst_n && in_grid && fract_x==0) begin
+    if (~reset && in_grid && fract_x==0) begin
       left <= `TAIL(cells, 0);
       `SHIFT(cells);
       if (pix_y == 0) begin
-        if (init) begin
-          `HEAD(cells) <= cell_x == GRID_W/2; // seed
+        if (row_count==0) begin
+          `HEAD(cells) <= seed_cell;
          end else begin
           `HEAD(cells) <= `TAIL(next_cells, 0);
           `SHIFT(next_cells);
@@ -130,7 +133,6 @@ module tt_um_znah_vga_ca(
       if (pix_y == CELL_SIZE) begin
         `SHIFT(next_cells);
         `HEAD(next_cells) <= new_cell;
-        init <= 0;
       end
     end
   end
