@@ -107,11 +107,14 @@ module tt_um_znah_vga_ca(
   wire in_grid = cell_x < GRID_W && video_active;
   reg init = 1;
   always @(posedge clk) begin
-    if (!rst_n) begin
+    if (~rst_n) begin
       init <= 1;
       row_count <= 0;
+    end else if (pix_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
+      row_count <= row_count+(pix_y==HEIGHT ? 1-HEIGHT/CELL_SIZE : 1);
     end
-    if (in_grid && fract_x==0) begin
+
+    if (rst_n && in_grid && fract_x==0) begin
       left <= `TAIL(cells, 0);
       `SHIFT(cells);
       if (pix_y == 0) begin
@@ -129,9 +132,6 @@ module tt_um_znah_vga_ca(
         `HEAD(next_cells) <= new_cell;
         init <= 0;
       end
-    end
-    if (pix_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
-      row_count <= row_count+(pix_y==HEIGHT ? 1-HEIGHT/CELL_SIZE : 1);
     end
   end
 
