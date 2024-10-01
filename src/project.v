@@ -56,6 +56,7 @@ module tt_um_znah_vga_ca(
   wire [9:0] x = pix_x-PAD_LEFT;
   wire [7:0] cell_x = x[9:logCELL_SIZE];
   wire [logCELL_SIZE-1:0] fract_x = x[logCELL_SIZE-1:0];
+  wire [logCELL_SIZE-1:0] fract_y = pix_y[logCELL_SIZE-1:0];
   
   // parameter L = GRID_W/4-1;
   // `define REG(name) (* mem2reg *) reg [L:0] name [4]
@@ -101,9 +102,9 @@ module tt_um_znah_vga_ca(
   wire [5:0] rule_color = rule[6:1];
   
   wire seed_cell = cell_x == GRID_W/2;
-  wire rule_cell = rule[{left,center,right}];
-  wire [logCELL_SIZE-1:0] cell_row = pix_y[logCELL_SIZE-1:0];
-  wire new_cell = cell_row==0 ? rule_cell : center;
+  wire first_row_cell = row_count==0 ? seed_cell : `TAIL(next_cells, 0);
+  wire rule_cell = fract_y==0 ? rule[{left,center,right}] : center;
+  wire new_cell = pix_y==0 ? first_row_cell : rule_cell;
 
   wire in_grid = cell_x < GRID_W && video_active;
   wire row_end = pix_x == WIDTH;
@@ -111,33 +112,26 @@ module tt_um_znah_vga_ca(
   always @(posedge clk) begin
     if (reset) begin
       row_count <= 0;
-    end else if (row_end && pix_y<HEIGHT && &cell_row) begin
+    end else if (row_end && pix_y<HEIGHT && &fract_y) begin
       row_count <= row_count+1;
     end else if (row_end && pix_y==HEIGHT) begin
       row_count <= row_count-HEIGHT/CELL_SIZE+1;
     end
 
-    if (~reset && in_grid && fract_x==0) begin
+    if (~reset && in_grid && fract_x==CELL_SIZE-1) begin
       left <= `TAIL(cells, 0);
       `SHIFT(cells);
+      `HEAD(cells) <= new_cell;
       if (pix_y == 0) begin
-        if (row_count==0) begin
-          `HEAD(cells) <= seed_cell;
-         end else begin
-          `HEAD(cells) <= `TAIL(next_cells, 0);
-          `SHIFT(next_cells);
-         end
-      end else begin
-        `HEAD(cells) <= new_cell;
-      end
-      if (pix_y == CELL_SIZE) begin
+        `SHIFT(next_cells);
+      end else if (pix_y == CELL_SIZE) begin
         `SHIFT(next_cells);
         `HEAD(next_cells) <= new_cell;
       end
     end
   end
 
-  wire c = `HEAD(cells)&in_grid;
+  wire c = new_cell&in_grid;
   wire [5:0] color = c ? rule_color : 6'b000000;
 
   assign R = color[5:4];
