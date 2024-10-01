@@ -112,13 +112,14 @@ module tt_um_znah_vga_ca(
   always @(posedge clk) begin
     if (reset) begin
       row_count <= 0;
+      `HEAD(cells) <= 0;
     end else if (row_end && pix_y<HEIGHT && &fract_y) begin
       row_count <= row_count+1;
     end else if (row_end && pix_y==HEIGHT) begin
       row_count <= row_count-HEIGHT/CELL_SIZE+1;
     end
 
-    if (~reset && in_grid && fract_x==CELL_SIZE-1) begin
+    if (~reset && in_grid && fract_x==0) begin
       left <= `TAIL(cells, 0);
       `SHIFT(cells);
       `HEAD(cells) <= new_cell;
@@ -131,7 +132,7 @@ module tt_um_znah_vga_ca(
     end
   end
 
-  wire c = new_cell&in_grid;
+  wire c = `HEAD(cells) & in_grid;
   wire [5:0] color = c ? rule_color : 6'b000000;
 
   assign R = color[5:4];
