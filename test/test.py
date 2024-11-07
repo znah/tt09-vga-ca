@@ -4,7 +4,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, FallingEdge
-import numpy as np
+# import numpy as np
 
 
 @cocotb.test()
@@ -51,12 +51,12 @@ async def test_project(dut):
     print(dir(dut.uo_out))
     for i in range(ROW_CLOCKS*4*8):
         await FallingEdge(dut.clk)
-        if pixel_x < W and pixel_y<H:
-            screen[pixel_y,pixel_x] = dut.uo_out
+        # if pixel_x < W and pixel_y<H:
+        #     screen[pixel_y,pixel_x] = dut.uo_out
         pixel_x += 1
-    bits = np.unpackbits(screen, bitorder='little').reshape(H, W, 8)
-    rgb = bits[...,:3]*170 + bits[...,4:7]*85
-    print(rgb.shape, bits.shape)
+    #bits = np.unpackbits(screen, bitorder='little').reshape(H, W, 8)
+    #rgb = bits[...,:3]*170 + bits[...,4:7]*85
+    #print(rgb.shape, bits.shape)
     
     # Set the input values you want to test
     #dut.ui_in.value = 20
