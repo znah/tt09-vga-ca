@@ -28,7 +28,7 @@ async def test_project(dut):
     PAD = 48*2
     W, H = 640+PAD, 480+PAD
     ROW_CLOCKS = 800
-    screen = np.zeros([H, W], np.uint8)
+    #screen = np.zeros([H, W], np.uint8)
 
     async def hsync():
         nonlocal pixel_x, pixel_y
