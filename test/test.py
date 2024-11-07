@@ -4,10 +4,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, FallingEdge
-import PIL.Image
 import numpy as np
-
-
 
 
 @cocotb.test()
@@ -60,10 +57,7 @@ async def test_project(dut):
     bits = np.unpackbits(screen, bitorder='little').reshape(H, W, 8)
     rgb = bits[...,:3]*170 + bits[...,4:7]*85
     print(rgb.shape, bits.shape)
-    PIL.Image.fromarray(rgb).save('screen.png')
-        
-        
-
+    
     # Set the input values you want to test
     #dut.ui_in.value = 20
     #dut.uio_in.value = 30
