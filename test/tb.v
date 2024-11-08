@@ -22,6 +22,8 @@ module tb ();
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+  wire hsync;
+  wire vsync;
 `ifdef GL_TEST
   wire VPWR = 1'b1;
   wire VGND = 1'b0;
@@ -45,5 +47,7 @@ module tb ();
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
   );
+  assign hsync = uo_out[7];
+  assign vsync = uo_out[3];
 
 endmodule

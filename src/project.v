@@ -55,16 +55,30 @@ module tt_um_znah_vga_ca(
   
   wire [9:0] x = pix_x-PAD_LEFT;
   wire [7:0] cell_x = x[9:logCELL_SIZE];
-  wire step = x[logCELL_SIZE-1];
 
-  parameter L = GRID_W/4-1;
-  `define REG(name) (* mem2reg *) reg [L:0] name [4]
-  `define SHIFT(data) data[3] <= {data[3][L-1:0], data[2][L]}; \
-                      data[2] <= {data[2][L-1:0], data[1][L]}; \
-                      data[1] <= {data[1][L-1:0], data[0][L]}; \
-                      data[0][L:1] <= data[0][L-1:0];
-  `define HEAD(data) data[0][0]
-  `define TAIL(data,i) data[3][L-(i)]
+  wire [logCELL_SIZE-1:0] fract_x = x[logCELL_SIZE-1:0];
+  wire [logCELL_SIZE-1:0] fract_y = pix_y[logCELL_SIZE-1:0];
+  
+  // parameter L = GRID_W/4-1;
+  // `define REG(name) (* mem2reg *) reg [L:0] name [4]
+  // `define SHIFT(data) data[3] <= {data[3][L-1:0], data[2][L]}; \
+  //                     data[2] <= {data[2][L-1:0], data[1][L]}; \
+  //                     data[1] <= {data[1][L-1:0], data[0][L]}; \
+  //                     data[0][L:1] <= data[0][L-1:0];
+  // `define HEAD(data) data[0][0]
+  // `define TAIL(data,i) data[3][L-(i)]
+  parameter L = GRID_W-1;
+  `ifdef SIM
+    `define BUF(name) assign name``_buf = name
+  `else
+    `define BUF(name) sky130_fd_sc_hd__dlygate4sd3_1 name``buf_[L:0] ( .X(name``_buf), .A(name) )
+  `endif
+  `define REG(name) (* mem2reg *) reg[L:0] name; wire[L:0] name``_buf ; `BUF(name)
+
+  `define SHIFT(data) data[L:1] <= data``_buf[L-1:0]
+  `define HEAD(data) data[0]
+  `define TAIL(data,i) data``_buf[L-(i)]
+
   `REG(cells);
   `REG(next_cells);
   reg left;
@@ -88,42 +102,41 @@ module tt_um_znah_vga_ca(
   wire [7:0] rule = rules[i];
   wire [5:0] rule_color = rule[6:1];
   
-  wire rule_cell = rule[{left,center,right}];
-  wire copy_row = |pix_y[logCELL_SIZE-1:0];
-  wire new_cell = copy_row ? center : rule_cell;
+  wire seed_cell = cell_x == GRID_W/2;
+  wire first_row_cell = row_count==0 ? seed_cell : `TAIL(next_cells, 0);
+  wire rule_cell = fract_y==0 ? rule[{left,center,right}] : center;
+  wire new_cell = pix_y==0 ? first_row_cell : rule_cell;
 
   wire in_grid = cell_x < GRID_W && video_active;
-  reg init = 1;
-  always @(negedge step) begin
-    if (!rst_n) begin
-      init <= 1;
+  wire row_end = pix_x == WIDTH;
+  wire reset = ~rst_n;
+  always @(posedge clk) begin
+    if (reset) begin
+      row_count <= 0;
+      `HEAD(cells) <= 0;
+    end else if (row_end && pix_y<HEIGHT && &fract_y) begin
+      row_count <= row_count+1;
+    end else if (row_end && pix_y==HEIGHT) begin
+      row_count <= row_count-HEIGHT/CELL_SIZE+1;
     end
-    if (in_grid) begin
+
+    if (~reset && in_grid && fract_x==0) begin
       left <= `TAIL(cells, 0);
       `SHIFT(cells);
+      `HEAD(cells) <= new_cell;
       if (pix_y == 0) begin
-        if (init) begin
-          `HEAD(cells) <= cell_x == GRID_W/2; // seed
-         end else begin
-          `HEAD(cells) <= `TAIL(next_cells, 0);
-          `SHIFT(next_cells);
-         end
-      end else begin
-        `HEAD(cells) <= new_cell;
-      end
-      if (pix_y == CELL_SIZE) begin
+        `SHIFT(next_cells);
+      end else if (pix_y == CELL_SIZE) begin
         `SHIFT(next_cells);
         `HEAD(next_cells) <= new_cell;
-        init <= 0;
       end
     end
-    if (cell_x == 0 && pix_y<=HEIGHT && pix_y%CELL_SIZE==0) begin // rule switching
-      row_count <= row_count+(pix_y==HEIGHT ? 1-HEIGHT/CELL_SIZE : 1);
-    end
+
   end
 
-  wire c = `HEAD(cells)&in_grid;
+  wire c = `HEAD(cells) & in_grid;
   wire [5:0] color = c ? rule_color : 6'b000000;
+
   assign R = color[5:4];
   assign G = color[3:2];
   assign B = color[1:0];
