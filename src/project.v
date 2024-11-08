@@ -55,6 +55,7 @@ module tt_um_znah_vga_ca(
   
   wire [9:0] x = pix_x-PAD_LEFT;
   wire [7:0] cell_x = x[9:logCELL_SIZE];
+
   wire [logCELL_SIZE-1:0] fract_x = x[logCELL_SIZE-1:0];
   wire [logCELL_SIZE-1:0] fract_y = pix_y[logCELL_SIZE-1:0];
   
@@ -130,6 +131,7 @@ module tt_um_znah_vga_ca(
         `HEAD(next_cells) <= new_cell;
       end
     end
+
   end
 
   wire c = `HEAD(cells) & in_grid;
